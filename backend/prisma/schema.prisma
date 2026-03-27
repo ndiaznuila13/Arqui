@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  estudiante
+  tutor
+}
+
+enum EstadoReserva {
+  confirmada
+  cancelada
+  completada
+}
+
+model Usuario {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  rol       Rol
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  tutor              Tutor?
+  reservasEstudiante Reserva[] @relation("EstudianteReservas")
+
+  @@map("usuarios")
+}
+
+model Tutor {
+  id          String   @id
+  materias    String[]
+  tarifaHora  Decimal  @map("tarifa_hora") @db.Decimal(10, 2)
+  biografia   String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  usuario          Usuario          @relation(fields: [id], references: [id])
+  disponibilidades Disponibilidad[]
+  reservas         Reserva[]        @relation("TutorReservasDirectas")
+
+  @@map("tutores")
+}
+
+model Disponibilidad {
+  id         String   @id @default(uuid())
+  tutorId    String   @map("tutor_id")
+  diaSemana  Int      @map("dia_semana") // 1=Lunes, 7=Domingo
+  horaInicio String   @map("hora_inicio") // HH:MM
+  horaFin    String   @map("hora_fin")    // HH:MM
+  activo     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  tutor Tutor @relation(fields: [tutorId], references: [id])
+
+  @@map("disponibilidades")
+}
+
+model Reserva {
+  id            String        @id @default(uuid())
+  estudianteId  String        @map("estudiante_id")
+  tutorId       String        @map("tutor_id")
+  fecha         DateTime      @db.Date
+  horaInicio    String        @map("hora_inicio") // HH:MM
+  horaFin       String        @map("hora_fin")    // HH:MM
+  estado        EstadoReserva @default(confirmada)
+  penaltyReason String?       @map("penalty_reason")
+  penaltyFee    Decimal?      @map("penalty_fee") @db.Decimal(10, 2)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relaciones
+  estudiante Usuario @relation("EstudianteReservas", fields: [estudianteId], references: [id])
+  tutor      Tutor   @relation("TutorReservasDirectas", fields: [tutorId], references: [id])
+
+  @@map("reservas")
+}
