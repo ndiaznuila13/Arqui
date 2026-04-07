@@ -10,7 +10,15 @@ import {errorHandler} from "./middlewares/errorHandler";
 const app = express();
 
 // Middlewares globales
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://tutorias-frontend-jose-napoleon-diaz-nuila-cerritos.s3-website.us-east-2.amazonaws.com',
+    'http://localhost:5173'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
